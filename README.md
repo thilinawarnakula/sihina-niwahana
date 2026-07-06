@@ -84,3 +84,14 @@ data/                    profiles, results, cache (flat JSON, no database)
 Adding a site = one new module in `finder/sources/` returning the normalized
 listing shape (see `finder/sources/__init__.py`) plus an entry in
 `config/sources.json`.
+
+## Tests
+
+```bash
+python3 -m unittest discover tests -v
+```
+
+Offline (no network — fetches are mocked). They pin the two core behaviours:
+different preferences fetch different pages and rank differently; identical
+preferences give identical, deterministic results; plus dedupe rules
+(shared listing IDs, truncated titles) and per-perch price conversion.
