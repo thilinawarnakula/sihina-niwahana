@@ -92,7 +92,8 @@ code, it doesn't rewrite the hard part.
 
 | Today | After |
 |---|---|
-| `web/index.html` (vanilla JS) | React (Vite) — components for chat intake, form, results |
+| `web/index.html` (vanilla JS) | React (Vite) + **Tailwind CSS** — components for chat intake, form, results |
+| hand-written CSS (REA theme) | Tailwind utility classes; keep the realestate.com.au look by putting the design tokens (`#E4002B` red, charcoal `#2E3A44`, Inter font, radii, shadows) into `tailwind.config.js` `theme.extend` |
 | `webapp.py` + Netlify Functions | NestJS: `SearchModule` (one service per source, ported from engine.js), `AuthModule` (Firebase Admin guard), `MailModule` (nodemailer) |
 | `finder/*.py` + CLI | removed (or kept as reference until parity is proven) |
 | Netlify static + functions | React stays on Netlify; NestJS runs on Render/Railway/Fly (Netlify cannot host a NestJS server) |
@@ -119,8 +120,9 @@ is required — otherwise many users = hammering the sites = IP bans and a
 CLAUDE.md guardrail violation.
 
 **Suggested order:** NestJS backend with engine.js dropped in (1–2 days) →
-React frontend, porting the UI and chat script 1:1 (2–3 days) → Jest tests →
-per-site queue + Redis cache → only then delete the Python tree.
+React + Tailwind frontend, porting the UI and chat script 1:1 with the REA
+tokens in the Tailwind theme (2–3 days) → Jest tests → per-site queue +
+Redis cache → only then delete the Python tree.
 
 ## Explicitly out of scope (per CLAUDE.md)
 
