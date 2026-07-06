@@ -149,6 +149,8 @@ class Handler(BaseHTTPRequestHandler):
             self._file(INDEX, "text/html; charset=utf-8")
         elif self.path == "/firebase-config.js":
             self._file(FB_CONFIG, "application/javascript; charset=utf-8")
+        elif self.path == "/engine.js":
+            self._file(WEB_DIR / "engine.js", "application/javascript; charset=utf-8")
         elif self.path == "/api/config":
             key = self._session_key()
             self._json(200, {

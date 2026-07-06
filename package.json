@@ -1,0 +1,8 @@
+{
+  "name": "sihina-niwahana",
+  "private": true,
+  "description": "Sri Lanka property finder — Netlify functions dependencies",
+  "dependencies": {
+    "nodemailer": "^6.9.14"
+  }
+}

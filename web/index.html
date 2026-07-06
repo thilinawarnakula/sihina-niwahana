@@ -150,10 +150,18 @@ a { color:var(--green); }
   </div>
 </div>
 
+<script src="/engine.js"></script>
 <script>
 const $ = id => document.getElementById(id);
 const esc = s => String(s ?? "").replace(/[&<>"']/g,
   c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+
+// MODE "python": local webapp.py backend does the searching.
+// MODE "static": no backend (e.g. Netlify) — the search runs in this browser
+// via engine.js, fetching pages through the /api/page proxy function.
+let MODE = "python";
+let fbUser = null;       // firebase user in static mode
+let lastPayload = null;  // last search results (for the email button)
 
 document.querySelectorAll("#types .chip").forEach(c =>
   c.onclick = () => c.classList.toggle("on"));
@@ -162,7 +170,17 @@ document.querySelectorAll("#purpose .chip").forEach(c =>
     .forEach(x => x.classList.remove("on")); c.classList.add("on"); });
 
 async function init() {
-  const cfg = await (await fetch("/api/config")).json();
+  let cfg = null;
+  try {
+    const r = await fetch("/api/config");
+    if (r.ok) cfg = await r.json();
+  } catch (e) { /* no python backend */ }
+
+  if (!cfg) {           // static hosting (Netlify): browser engine + functions
+    MODE = "static";
+    await initStatic();
+    return;
+  }
   if (cfg.loginMode !== "none" && !cfg.authed) {
     $("login").classList.remove("hidden");
     $(cfg.loginMode === "firebase" ? "fblogin" : "pwlogin").classList.remove("hidden");
@@ -177,6 +195,33 @@ async function init() {
   }
 }
 init();
+
+async function initStatic() {
+  try { if (!window.FIREBASE_CONFIG) await loadScript("/firebase-config.js"); } catch (e) {}
+  if (!window.FIREBASE_CONFIG) { $("app").classList.remove("hidden"); return; }
+  await loadScript("https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js");
+  await loadScript("https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js");
+  firebase.initializeApp(window.FIREBASE_CONFIG);
+  firebase.auth().onAuthStateChanged(u => {
+    fbUser = u;
+    if (u) {
+      $("login").classList.add("hidden");
+      $("app").classList.remove("hidden");
+      $("whoami").innerHTML =
+        ` Signed in as <b>${esc(u.email)}</b> — <button class="linkbtn" onclick="logout()">log out</button>`;
+    } else {
+      $("app").classList.add("hidden");
+      $("login").classList.remove("hidden");
+      $("fblogin").classList.remove("hidden");
+    }
+  });
+}
+
+async function authHeaders() {
+  if (MODE === "static" && fbUser)
+    return { Authorization: "Bearer " + await fbUser.getIdToken() };
+  return {};
+}
 
 async function login() {
   const r = await fetch("/api/login", {method:"POST",
@@ -211,6 +256,7 @@ async function firebaseLogin() {
       firebase.initializeApp(window.FIREBASE_CONFIG);
     }
     const cred = await firebase.auth().signInWithPopup(new firebase.auth.GoogleAuthProvider());
+    if (MODE === "static") return; // onAuthStateChanged shows the app
     const idToken = await cred.user.getIdToken();
     const r = await fetch("/api/login", {method:"POST",
       headers:{"Content-Type":"application/json"}, body: JSON.stringify({idToken})});
@@ -223,6 +269,7 @@ async function firebaseLogin() {
 }
 
 async function logout() {
+  if (MODE === "static") { await firebase.auth().signOut(); location.reload(); return; }
   await fetch("/api/logout", {method:"POST"});
   location.reload();
 }
@@ -248,10 +295,26 @@ async function search() {
   $("status").textContent = "Searching ikman.lk, LankaPropertyWeb, house.lk, LankaLand… " +
     "this takes a minute (requests are rate-limited to be polite to the sites).";
   try {
-    const r = await fetch("/api/search", {method:"POST",
-      headers:{"Content-Type":"application/json"}, body: JSON.stringify(body)});
-    const data = await r.json();
-    if (!r.ok) throw new Error(data.error || r.statusText);
+    let data;
+    if (MODE === "static") {
+      const headers = await authHeaders();
+      const fetchPage = async (url) => {
+        const r = await fetch("/api/page?url=" + encodeURIComponent(url), { headers });
+        if (!r.ok) {
+          let msg = "HTTP " + r.status;
+          try { msg = (await r.json()).error || msg; } catch (e) {}
+          throw new Error(msg);
+        }
+        return r.text();
+      };
+      data = await SihinaEngine.runSearch(body, fetchPage,
+        (msg) => { $("status").textContent = msg; });
+    } else {
+      const r = await fetch("/api/search", {method:"POST",
+        headers:{"Content-Type":"application/json"}, body: JSON.stringify(body)});
+      data = await r.json();
+      if (!r.ok) throw new Error(data.error || r.statusText);
+    }
     show(data);
     $("status").textContent = "";
   } catch (e) {
@@ -261,6 +324,7 @@ async function search() {
 }
 
 function show(d) {
+  lastPayload = d;
   const ls = d.listings || [];
   const priced = ls.filter(l => l.priceLKR);
   const med = priced.length ?
@@ -435,14 +499,38 @@ function askMust() {
   quicks(["Skip"]);
 }
 
+function emailBody(d) {
+  const p = d.profile || {}, ls = d.listings || [];
+  const subject = `Property search: ${ls.length} matches — ` +
+    `${(p.propertyTypes||[]).join("/")} in ${(p.areas||[]).join(", ")}`;
+  const text = ls.slice(0, 10).map((l, i) =>
+    `${i+1}. ${l.title}\n   ${l.priceText || "price not stated"} | ${l.area}\n   ${l.url}`
+  ).join("\n\n");
+  const html = `<h2>${esc(subject)}</h2>` + ls.slice(0, 25).map((l, i) =>
+    `<p><b>${i+1}. <a href="${esc(l.url)}">${esc(l.title)}</a></b><br>` +
+    `${esc(l.priceText || "price not stated")} · ${esc(l.area)} · ${esc(l.propertyType)}` +
+    `${l.bedrooms ? " · " + l.bedrooms + " bed" : ""}${l.perches ? " · " + l.perches + "P" : ""}` +
+    ` <small>[${esc(l.source)}]</small></p>`).join("") +
+    `<p><small>Sihina Niwahana — prices in LKR as displayed by each source site.</small></p>`;
+  return { subject, text, html };
+}
+
 async function sendMail() {
   const to = $("mailto").value.trim();
   $("send").disabled = true;
   $("mailstatus").className = "status";
   $("mailstatus").textContent = "Sending…";
   try {
-    const r = await fetch("/api/email", {method:"POST",
-      headers:{"Content-Type":"application/json"}, body: JSON.stringify({to})});
+    let r;
+    if (MODE === "static") {
+      if (!lastPayload) throw new Error("Run a search first");
+      r = await fetch("/api/mail", {method:"POST",
+        headers: {"Content-Type":"application/json", ...(await authHeaders())},
+        body: JSON.stringify({to, ...emailBody(lastPayload)})});
+    } else {
+      r = await fetch("/api/email", {method:"POST",
+        headers:{"Content-Type":"application/json"}, body: JSON.stringify({to})});
+    }
     const data = await r.json();
     if (!r.ok) throw new Error(data.error || r.statusText);
     $("mailstatus").textContent = "Sent to " + data.sent + " ✓";
