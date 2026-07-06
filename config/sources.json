@@ -1,0 +1,58 @@
+[
+  {
+    "id": "ikman",
+    "name": "ikman.lk",
+    "baseUrl": "https://ikman.lk/en/ads",
+    "priority": 1,
+    "enabled": true,
+    "notes": "Largest classified site. Path-based URLs only (robots.txt disallows ?sort/?query/?filters params); budget is filtered client-side. Listings parsed from the window.initialData JSON blob."
+  },
+  {
+    "id": "lpw",
+    "name": "LankaPropertyWeb",
+    "baseUrl": "https://www.lankapropertyweb.com",
+    "priority": 1,
+    "enabled": true,
+    "notes": "Dedicated real-estate portal. Static search pages: /forsale-{Province}_{City}-{Type}.html and /rentals/lease-{Province}_{City}-{Type}.html. Query-string search URLs are disallowed by robots.txt."
+  },
+  {
+    "id": "houselk",
+    "name": "house.lk",
+    "baseUrl": "https://house.lk/",
+    "priority": 2,
+    "enabled": true,
+    "notes": "Secondary source. Path URLs /{sale|rent}/{district}/{city}/{type}/. Shares LankaPropertyWeb's backend and listing IDs — duplicates are removed via refId."
+  },
+  {
+    "id": "lankaland",
+    "name": "LankaLand.lk",
+    "baseUrl": "https://www.lankaland.lk/",
+    "priority": 2,
+    "enabled": true,
+    "notes": "Secondary source. WordPress site; /search-results?category=&city=&status=. Small inventory, prices often 'Negotiable'."
+  },
+  {
+    "id": "patpat",
+    "name": "patpat.lk",
+    "baseUrl": "https://patpat.lk/en/sri-lanka/property",
+    "priority": 4,
+    "enabled": true,
+    "notes": "robots.txt disallows ALL crawling and the server 403s non-browser clients. Never scrape — only a manual browse link is shown."
+  },
+  {
+    "id": "ceylonproperty",
+    "name": "CeylonProperty.lk",
+    "baseUrl": "https://ceylonproperty.lk/",
+    "priority": 4,
+    "enabled": true,
+    "notes": "robots.txt disallows all listing-search entry points (/search, /buy-property-in-, /rent-, /lands). Never scrape those — only a manual browse link is shown."
+  },
+  {
+    "id": "facebook",
+    "name": "Facebook Marketplace",
+    "baseUrl": "https://www.facebook.com/marketplace/",
+    "priority": 5,
+    "enabled": true,
+    "notes": "No public API. Do not scrape. This source only generates a pre-filled search URL for the user to browse manually."
+  }
+]

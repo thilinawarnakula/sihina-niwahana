@@ -1,0 +1,28 @@
+{
+  "propertyTypes": [
+    "house",
+    "apartment"
+  ],
+  "purpose": "buy",
+  "areas": [
+    "Nugegoda",
+    "Colombo 5"
+  ],
+  "budgetLKR": {
+    "min": 20000000,
+    "max": 45000000
+  },
+  "size": {
+    "bedrooms": 3,
+    "bathrooms": null,
+    "perches": null,
+    "sqft": null
+  },
+  "mustHaves": [
+    "parking"
+  ],
+  "furnishing": "any",
+  "dealBreakers": [],
+  "timeline": "",
+  "createdAt": "2026-07-06T04:53:40Z"
+}
