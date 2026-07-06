@@ -3,6 +3,24 @@
 A CLI assistant that finds **land, houses, and apartments in Sri Lanka only**.
 This guide covers everything needed to run it.
 
+## New stack (React + NestJS) — migration in progress
+
+The JS/TS stack lives in `server/` (NestJS API) and `client/` (React +
+Tailwind). The Python version below still works and stays until parity is
+confirmed (see docs/roadmap.md).
+
+```bash
+# terminal 1 — API on :3001 (FIREBASE_API_KEY enables auth, like the env
+# vars described in the website section below)
+cd server && npm install && npm run build && npm start
+
+# terminal 2 — React dev server on :5173, proxying /api to :3001
+cd client && npm install && npm run dev
+```
+
+Production: `cd client && npm run build`, then the NestJS server serves
+`client/dist` itself — one process, one port.
+
 ## Requirements
 
 - **Python 3** (3.8 or newer; the project is tested on 3.13)
