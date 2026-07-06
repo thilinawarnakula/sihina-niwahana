@@ -1,0 +1,23 @@
+# Render blueprint — deploys the NestJS backend (server/).
+# In Render: New -> Blueprint -> pick this repo, and it reads this file.
+# Fill the env var values in the Render dashboard when prompted
+# (they are marked sync: false so they never live in the repo).
+
+services:
+  - type: web
+    name: sihina-niwahana-api
+    runtime: node
+    plan: free
+    rootDir: server
+    buildCommand: npm install && npm run build
+    startCommand: npm start
+    healthCheckPath: /api/config
+    envVars:
+      - key: FIREBASE_API_KEY
+        sync: false   # web API key; enables auth on /api/search and /api/mail
+      - key: ALLOWED_EMAILS
+        sync: false   # comma-separated accounts allowed to sign in / receive mail
+      - key: SMTP_USER
+        sync: false   # optional — Gmail address for the email button
+      - key: SMTP_PASS
+        sync: false   # optional — Gmail App Password
