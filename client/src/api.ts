@@ -29,10 +29,28 @@ async function call<T>(path: string, body?: unknown): Promise<T> {
   return data as T;
 }
 
-export const getConfig = () =>
-  call<{ loginMode: string; emailConfigured: boolean }>("/api/config");
+/** Backend detection: the NestJS API answers /api/config; on static hosting
+ *  (Netlify) it 404s and the search runs in the browser instead. */
+export const getConfig = async () => {
+  try {
+    return await call<{ loginMode: string; emailConfigured: boolean }>("/api/config");
+  } catch {
+    return null;
+  }
+};
 export const runSearch = (profile: unknown) =>
   call<SearchPayload>("/api/search", profile);
+/** Static-mode page fetch through the Netlify proxy function */
+export const fetchPageViaProxy = async (url: string): Promise<string> => {
+  const res = await fetch("/api/page?url=" + encodeURIComponent(url),
+    { headers: await authHeaders() });
+  if (!res.ok) {
+    let msg = "HTTP " + res.status;
+    try { msg = (await res.json()).error || msg; } catch {}
+    throw new Error(msg);
+  }
+  return res.text();
+};
 export const sendMail = (payload: { to: string; subject: string; text: string; html: string }) =>
   call<{ ok: boolean; sent: string }>("/api/mail", payload);
 

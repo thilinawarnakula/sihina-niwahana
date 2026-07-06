@@ -1,5 +1,6 @@
 [build]
-  publish = "web"
+  publish = "client/dist"
+  command = "cd client && npm install && npm run build"
   functions = "netlify/functions"
 
 [functions]
@@ -13,4 +14,10 @@
 [[redirects]]
   from = "/api/mail"
   to = "/.netlify/functions/mail"
+  status = 200
+
+# SPA fallback — React handles all other routes
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
   status = 200

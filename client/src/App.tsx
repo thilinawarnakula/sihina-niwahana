@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 import { User } from "firebase/auth";
 import { logOut, watchUser } from "./firebase";
-import { runSearch, SearchPayload } from "./api";
+import { fetchPageViaProxy, getConfig, runSearch, SearchPayload } from "./api";
+import { runSearchInBrowser } from "./engine";
 import Login from "./components/Login";
 import Chat from "./components/Chat";
 import SearchForm, { emptyForm, FormState, toProfile } from "./components/SearchForm";
@@ -14,8 +15,10 @@ export default function App() {
   const [busy, setBusy] = useState(false);
   const [status, setStatus] = useState<{ text: string; error?: boolean } | null>(null);
   const [data, setData] = useState<SearchPayload | null>(null);
+  const [hasBackend, setHasBackend] = useState(true);
 
   useEffect(() => watchUser((u) => { setUser(u); setReady(true); }), []);
+  useEffect(() => { getConfig().then((c) => setHasBackend(c !== null)); }, []);
 
   const search = async () => {
     if (!form.types.length || !form.areas.trim()) {
@@ -27,7 +30,15 @@ export default function App() {
     setStatus({ text: "Searching ikman.lk, LankaPropertyWeb, house.lk, LankaLand — " +
                       "sites are fetched in parallel, politely." });
     try {
-      setData(await runSearch(toProfile(form)));
+      const profile = toProfile(form);
+      if (hasBackend) {
+        setData(await runSearch(profile));
+      } else {
+        // static hosting (Netlify): search runs in this browser via the
+        // /api/page proxy function — same engine, same politeness
+        setData(await runSearchInBrowser(profile as any, fetchPageViaProxy,
+          (msg) => setStatus({ text: msg })) as SearchPayload);
+      }
       setStatus(null);
     } catch (e: any) {
       setStatus({ text: "Search failed: " + e.message, error: true });

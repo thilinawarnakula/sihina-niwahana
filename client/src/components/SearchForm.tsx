@@ -14,12 +14,16 @@ export const emptyForm: FormState = {
 
 export function toProfile(f: FormState) {
   const csv = (s: string) => s.split(",").map((x) => x.trim()).filter(Boolean);
+  const num = (s: string) => {
+    const n = parseFloat(s);
+    return Number.isFinite(n) ? Math.round(n) : null;
+  };
   return {
     propertyTypes: f.types,
     purpose: f.purpose,
     areas: csv(f.areas),
-    budgetLKR: { min: f.bmin || null, max: f.bmax || null },
-    size: { bedrooms: f.beds || null, perches: f.perches || null },
+    budgetLKR: { min: num(f.bmin), max: num(f.bmax) },
+    size: { bedrooms: num(f.beds), perches: num(f.perches) },
     mustHaves: csv(f.must),
     dealBreakers: csv(f.avoid),
   };
