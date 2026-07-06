@@ -20,6 +20,8 @@ python3 propertyfinder.py search
 
 # "Same as last time" — just run search again; it reuses the saved profile.
 python3 propertyfinder.py show          # see the current profile
+python3 propertyfinder.py search --html # also open an HTML report with insights
+python3 propertyfinder.py report        # re-render the latest results as HTML
 ```
 
 Scripted intake (no prompts):

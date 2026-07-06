@@ -21,6 +21,7 @@ from finder.intake import load_profile, run_intake, save_profile, summarize
 from finder.dedupe import dedupe
 from finder.rank import rank
 from finder.output import print_results, save_results
+from finder.report import write_report
 from finder.sources import (ikman, lpw, houselk, lankaland, patpat,
                             ceylonproperty, facebook)
 
@@ -134,6 +135,27 @@ def cmd_search(args):
     print_results(ranked, coverage, manual_links, limit=args.limit)
     path = save_results(ranked, profile, coverage)
     print(f"\nFull results saved to {path}")
+    if args.html:
+        report = write_report(path)
+        print(f"HTML report: {report}")
+        _open_in_browser(report)
+
+
+def _open_in_browser(path):
+    import subprocess
+    import sys as _sys
+    if _sys.platform == "darwin":
+        subprocess.run(["open", str(path)], check=False)
+
+
+def cmd_report(args):
+    try:
+        report = write_report()
+    except FileNotFoundError as e:
+        sys.exit(str(e))
+    print(f"HTML report: {report}")
+    if not args.no_open:
+        _open_in_browser(report)
 
 
 def main():
@@ -157,10 +179,18 @@ def main():
     se = sub.add_parser("search", help="search all enabled sources")
     se.add_argument("--profile", help="use a named profile from data/profiles/")
     se.add_argument("--limit", type=int, default=20, help="max listings to print")
+    se.add_argument("--html", action="store_true",
+                    help="also generate an HTML report and open it")
     se.set_defaults(func=cmd_search)
 
     sh = sub.add_parser("show", help="print the current saved profile")
     sh.set_defaults(func=cmd_show)
+
+    rp = sub.add_parser("report", help="render the latest search results "
+                                       "as an HTML page with insights")
+    rp.add_argument("--no-open", action="store_true",
+                    help="just write the file, don't open the browser")
+    rp.set_defaults(func=cmd_report)
 
     args = ap.parse_args()
     args.func(args)

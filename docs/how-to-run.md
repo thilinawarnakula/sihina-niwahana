@@ -75,6 +75,21 @@ python3 propertyfinder.py search --limit 30      # print more results (default 2
 python3 propertyfinder.py show
 ```
 
+### `report` — web page with insights
+
+```bash
+python3 propertyfinder.py search --html      # search, then open an HTML report
+python3 propertyfinder.py report             # re-render the latest saved results
+python3 propertyfinder.py report --no-open   # write the file without opening it
+```
+
+Generates a self-contained HTML page (no internet needed to view it) next to
+the results JSON in `data/results/`. It shows summary tiles (matches, within
+budget, lowest/median/highest price, duplicates merged), bar charts by
+source, area, property type and bedrooms, a price-distribution histogram,
+best-value picks (price per bedroom), the full clickable shortlist, and the
+coverage report.
+
 ## What you get (the outcome)
 
 - A **ranked shortlist** in the terminal: title, price (LKR, exactly as the
