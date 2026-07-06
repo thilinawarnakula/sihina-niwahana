@@ -10,7 +10,16 @@ import html
 import json
 import statistics
 
-from . import RESULTS_DIR
+from . import RESULTS_DIR, SOURCES_PATH
+
+
+def _source_names():
+    """Map source id -> display name from config/sources.json."""
+    try:
+        return {s["id"]: s["name"]
+                for s in json.loads(SOURCES_PATH.read_text(encoding="utf-8"))}
+    except Exception:
+        return {}
 
 
 def _fmt_lkr(n):
@@ -154,9 +163,12 @@ def render(payload):
       <div class="tile"><b>{ins['dup_count']}</b><span>cross-site duplicates merged</span></div>
     </div>"""
 
+    names = _source_names()
+    by_source_named = {names.get(k, k): v for k, v in ins["by_source"].items()}
+
     charts = ['<div class="cols">']
     charts.append('<div><h2>By source</h2>' +
-                  _bar_rows(ins["by_source"], ins["count"]) + '</div>')
+                  _bar_rows(by_source_named, ins["count"]) + '</div>')
     if ins["by_area"]:
         charts.append('<div><h2>By area</h2>' +
                       _bar_rows(ins["by_area"], ins["count"], "#4a7fa5") + '</div>')
@@ -185,14 +197,15 @@ def render(payload):
     for i, l in enumerate(listings, 1):
         beds = f" · {l['bedrooms']} bed" if l.get("bedrooms") else ""
         contact = f" · seller: {_esc(l['contact'])}" if l.get("contact") else ""
-        also = (f' <span class="badge">also on: {_esc(", ".join(l["alsoOn"]))}</span>'
+        also = (f' <span class="badge">also on: '
+                f'{_esc(", ".join(names.get(s, s) for s in l["alsoOn"]))}</span>'
                 if l.get("alsoOn") else "")
         cards.append(f"""
       <div class="listing">
         <div class="t">{i}. <a href="{_esc(l['url'])}">{_esc(l['title'])}</a></div>
         <div class="meta"><span class="price">{_esc(l.get('priceText') or _fmt_lkr(l.get('priceLKR')))}</span>
           · {_esc(l.get('area'))} · {_esc(l.get('propertyType'))}{beds}{contact}
-          <span class="src">{_esc(l['source'])}</span>{also}</div>
+          <span class="src">{_esc(names.get(l['source'], l['source']))}</span>{also}</div>
       </div>""")
 
     cov = []
