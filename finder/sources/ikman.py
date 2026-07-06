@@ -97,6 +97,9 @@ def search(profile):
                 details = ad.get("details") or ""
                 beds = re.search(r"Bedrooms:\s*(\d+)", details)
                 result["listings"].append({
+                    # seller/agency name from the ad JSON; phone numbers are
+                    # click-to-reveal on the ad page and never scraped
+                    "contact": (ad.get("shopName") or "").strip() or None,
                     "title": (ad.get("title") or "").strip(),
                     "priceLKR": _parse_price(ad.get("price"), purpose),
                     "priceText": (ad.get("price") or "").strip(),

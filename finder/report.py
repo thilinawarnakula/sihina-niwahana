@@ -184,13 +184,14 @@ def render(payload):
     cards = []
     for i, l in enumerate(listings, 1):
         beds = f" · {l['bedrooms']} bed" if l.get("bedrooms") else ""
+        contact = f" · seller: {_esc(l['contact'])}" if l.get("contact") else ""
         also = (f' <span class="badge">also on: {_esc(", ".join(l["alsoOn"]))}</span>'
                 if l.get("alsoOn") else "")
         cards.append(f"""
       <div class="listing">
         <div class="t">{i}. <a href="{_esc(l['url'])}">{_esc(l['title'])}</a></div>
         <div class="meta"><span class="price">{_esc(l.get('priceText') or _fmt_lkr(l.get('priceLKR')))}</span>
-          · {_esc(l.get('area'))} · {_esc(l.get('propertyType'))}{beds}
+          · {_esc(l.get('area'))} · {_esc(l.get('propertyType'))}{beds}{contact}
           <span class="src">{_esc(l['source'])}</span>{also}</div>
       </div>""")
 

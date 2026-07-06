@@ -93,8 +93,10 @@ coverage report.
 ## What you get (the outcome)
 
 - A **ranked shortlist** in the terminal: title, price (LKR, exactly as the
-  site displays it), area, property type, bedrooms, source site, and a
-  direct working link to the original listing.
+  site displays it), area, property type, bedrooms, seller/agency name where
+  the site provides it, source site, and a direct working link to the
+  original listing. Phone numbers are click-to-reveal on the linked ad pages
+  and are never scraped.
 - Duplicates across sites are merged and marked, e.g. `(also on: houselk)`.
 - A **coverage report**: which sites were searched, how many listings each
   returned, and which sites could not be searched and why.

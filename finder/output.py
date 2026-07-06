@@ -27,8 +27,9 @@ def print_results(listings, coverage, manual_links, limit=20):
         for i, lst in enumerate(listings[:limit], 1):
             beds = f" | {lst['bedrooms']} bed" if lst.get("bedrooms") else ""
             also = f" (also on: {', '.join(lst['alsoOn'])})" if lst.get("alsoOn") else ""
+            contact = f" | seller: {lst['contact']}" if lst.get("contact") else ""
             print(f"{i:2}. {lst['title']}")
-            print(f"    {_fmt_price(lst)} | {lst['area']} | {lst['propertyType']}{beds}")
+            print(f"    {_fmt_price(lst)} | {lst['area']} | {lst['propertyType']}{beds}{contact}")
             print(f"    [{lst['source']}]{also} {lst['url']}\n")
 
     print("=== Coverage ===")
