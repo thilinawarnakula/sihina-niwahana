@@ -11,14 +11,12 @@
 // While this is null, the site falls back to APP_PASSWORD login (or open
 // access if that env var is unset).
 
-window.FIREBASE_CONFIG = null;
-
-// Example of what it should look like:
-// window.FIREBASE_CONFIG = {
-//   apiKey: "AIzaSy....",
-//   authDomain: "sihina-niwahana.firebaseapp.com",
-//   projectId: "sihina-niwahana",
-//   storageBucket: "sihina-niwahana.appspot.com",
-//   messagingSenderId: "1234567890",
-//   appId: "1:1234567890:web:abcdef123456"
-// };
+window.FIREBASE_CONFIG = {
+  apiKey: "AIzaSyCu_U6fkyGHsgB2oSCkZpIUKkGvr1jyJWQ",
+  authDomain: "sihina-niwahana-web.firebaseapp.com",
+  projectId: "sihina-niwahana-web",
+  storageBucket: "sihina-niwahana-web.firebasestorage.app",
+  messagingSenderId: "923740314398",
+  appId: "1:923740314398:web:45b72fe3c112f5ac5e470f",
+  measurementId: "G-RKZYPYBBG3"
+};
