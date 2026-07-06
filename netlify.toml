@@ -6,6 +6,9 @@
 [functions]
   node_bundler = "esbuild"
 
+# Order matters: first match wins.
+# page + mail stay on Netlify functions (page is the browser-mode
+# fallback when the Render backend is asleep; mail works in both modes).
 [[redirects]]
   from = "/api/page"
   to = "/.netlify/functions/page"
@@ -14,6 +17,12 @@
 [[redirects]]
   from = "/api/mail"
   to = "/.netlify/functions/mail"
+  status = 200
+
+# everything else under /api (config, search) -> NestJS on Render
+[[redirects]]
+  from = "/api/*"
+  to = "https://sihina-niwahana-api.onrender.com/api/:splat"
   status = 200
 
 # SPA fallback — React handles all other routes
