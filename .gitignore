@@ -3,3 +3,6 @@ __pycache__/
 .DS_Store
 data/.cache/
 data/results/
+node_modules/
+server/dist/
+client/dist/
