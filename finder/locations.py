@@ -33,6 +33,7 @@ CITY_DISTRICT = {
     "athurugiriya": "colombo", "kaduwela": "colombo", "kolonnawa": "colombo",
     "kohuwala": "colombo", "kirulapone": "colombo", "padukka": "colombo",
     "avissawella": "colombo", "angoda": "colombo", "wellampitiya": "colombo",
+    "nawinna": "colombo", "embuldeniya": "colombo", "udahamulla": "colombo",
     # Gampaha
     "negombo": "gampaha", "gampaha": "gampaha", "kadawatha": "gampaha",
     "wattala": "gampaha", "ja-ela": "gampaha", "kelaniya": "gampaha",

@@ -196,6 +196,7 @@ def render(payload):
     cards = []
     for i, l in enumerate(listings, 1):
         beds = f" · {l['bedrooms']} bed" if l.get("bedrooms") else ""
+        beds += f" · {l['perches']:g} perches" if l.get("perches") else ""
         contact = f" · seller: {_esc(l['contact'])}" if l.get("contact") else ""
         also = (f' <span class="badge">also on: '
                 f'{_esc(", ".join(names.get(s, s) for s in l["alsoOn"]))}</span>'

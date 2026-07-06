@@ -55,11 +55,25 @@ def _parse_cards(html, ptype, purpose):
         if not link or not title:
             continue
         price_text = (price.group(1).strip() if price else "")
+        title_text = re.sub(r"\s+", " ", title.group(1)).strip()
+        # land cards price per perch with the plot size stated in the title
+        per_perch = bool(re.search(r"per\s*perch", chunk[:2500], re.I))
+        pm = re.search(r"([\d.]+)\s*perch", title_text, re.I)
+        perches = float(pm.group(1)) if pm else None
+        price_lkr = _parse_price(price_text, purpose)
+        if per_perch and price_lkr:
+            if perches:
+                price_lkr = int(price_lkr * perches)
+                price_text += f" per perch (≈ Rs {price_lkr:,} total for {perches:g}P)"
+            else:
+                price_text += " per perch"
+                price_lkr = None
         listings.append({
             "refId": f"lpw-{link.group(2)}",  # shared backend with LPW
-            "title": re.sub(r"\s+", " ", title.group(1)).strip(),
-            "priceLKR": _parse_price(price_text, purpose),
+            "title": title_text,
+            "priceLKR": price_lkr,
             "priceText": price_text,
+            "perches": perches,
             "area": (loc.group(1).strip() if loc else ""),
             "propertyType": ptype,
             "source": "houselk",

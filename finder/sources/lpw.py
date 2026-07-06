@@ -4,6 +4,9 @@ Site structure (verified 2026-07-06):
   - Static, robots-allowed search pages:
       sale:  /forsale-{Province}_{City}-{Type}.html   e.g. /forsale-Western_Nugegoda-House.html
       rent:  /rentals/lease-{Province}_{City}-{Type}.html
+      land:  /land/sale-{Province}_{City}-all.html (and /land/lease-... for rent);
+             land cards price per perch (a span_psf "Per Perch" span) with the
+             plot size stated in the title, so totals are computed client-side
     Spaces in names become "+" (Mount+Lavinia). Colombo 1-15 use the pseudo
     province "Colombo All": /forsale-Colombo+All_Colombo+6-Apartment.html
     Query-string search URLs (?location=, ?property-type=, ?search=1) are
@@ -71,20 +74,36 @@ def _parse_cards(html, ptype, purpose):
         if not link or not title:
             continue
         price_text = (price.group(1).strip() if price else "")
+        title_text = re.sub(r"\s+", " ", title.group(1)).strip()
+        addr_text = re.sub(r"\s+", " ", addr.group(1)).strip() if addr else ""
+        # land cards price per perch (a "Per Perch" span follows the amount)
+        # and state the plot size in the title, e.g. "Prime 61.5 Perch Land"
+        per_perch = bool(re.search(r'span_psf">\s*Per\s*Perch', chunk, re.I))
+        pm = re.search(r"([\d.]+)\s*perch", title_text + " " + addr_text, re.I)
+        perches = float(pm.group(1)) if pm else None
+        price_lkr = _parse_price(price_text, purpose)
+        if per_perch and price_lkr:
+            if perches:
+                price_lkr = int(price_lkr * perches)
+                price_text += f" per perch (≈ Rs {price_lkr:,} total for {perches:g}P)"
+            else:
+                price_text += " per perch"
+                price_lkr = None
         ref = re.search(r"property_details-(\d+)", link.group(1))
         listings.append({
             # house.lk shares LPW's backend and listing IDs; refId lets
             # dedupe match the same property across the two sites exactly
             "refId": f"lpw-{ref.group(1)}" if ref else None,
-            "title": re.sub(r"\s+", " ", title.group(1)).strip(),
-            "priceLKR": _parse_price(price_text, purpose),
+            "title": title_text,
+            "priceLKR": price_lkr,
             "priceText": price_text,
-            "area": (loc.group(1).strip() if loc else (addr.group(1).strip() if addr else "")),
+            "perches": perches,
+            "area": (loc.group(1).strip() if loc else addr_text),
             "propertyType": ptype,
             "source": "lpw",
             "url": BASE + link.group(1),
             "bedrooms": int(beds.group(1)) if beds else None,
-            "details": re.sub(r"\s+", " ", addr.group(1)).strip() if addr else "",
+            "details": addr_text,
             "fetchedAt": now_iso(),
         })
     return listings
@@ -105,7 +124,11 @@ def search(profile):
             continue
         for ptype in types:
             type_label = TYPE.get(ptype)
-            if purpose == "rent":
+            if ptype == "land":
+                # land lives in its own section with -all pages
+                action = "lease" if purpose == "rent" else "sale"
+                url = f"{BASE}/land/{action}-{loc}-all.html"
+            elif purpose == "rent":
                 url = f"{BASE}/rentals/lease-{loc}-{type_label}.html"
             else:
                 url = f"{BASE}/forsale-{loc}-{type_label}.html"

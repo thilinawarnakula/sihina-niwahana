@@ -36,17 +36,19 @@ def _slug(area):
     return re.sub(r"[^a-z0-9]+", "-", area.lower()).strip("-")
 
 
-def _parse_price(text, purpose):
-    """'Rs 80,000,000' -> 80000000; rentals show 'Rs 700,000 /month', where the
-    monthly figure IS the comparable price. Returns None for per-perch prices
-    (a unit price can't be compared to a total budget)."""
+def _parse_price(text):
+    """'Rs 80,000,000' -> (80000000, 'total'); 'Rs 700,000 /month' ->
+    (700000, 'month'); 'Rs 1,400,000 per perch' -> (1400000, 'perch')."""
     low = (text or "").lower()
     m = re.search(r"Rs\s*([\d,]+)", text or "")
-    if not m or "perch" in low:
-        return None
-    if "month" in low and purpose != "rent":
-        return None
-    return int(m.group(1).replace(",", ""))
+    if not m:
+        return None, None
+    value = int(m.group(1).replace(",", ""))
+    if "perch" in low:
+        return value, "perch"
+    if "month" in low:
+        return value, "month"
+    return value, "total"
 
 
 def _extract_ads(html):
@@ -96,13 +98,26 @@ def search(profile):
                     continue
                 details = ad.get("details") or ""
                 beds = re.search(r"Bedrooms:\s*(\d+)", details)
+                pm = re.search(r"([\d.]+)\s*perch", details, re.I)
+                perches = float(pm.group(1)) if pm else None
+                value, unit = _parse_price(ad.get("price"))
+                price_text = (ad.get("price") or "").strip()
+                price_lkr = None
+                if unit == "total" or (unit == "month" and purpose == "rent"):
+                    price_lkr = value
+                elif unit == "perch" and perches:
+                    # land is usually priced per perch; the ad states the plot
+                    # size, so the comparable total is size x per-perch price
+                    price_lkr = int(value * perches)
+                    price_text += f" (≈ Rs {price_lkr:,} total for {perches:g}P)"
                 result["listings"].append({
                     # seller/agency name from the ad JSON; phone numbers are
                     # click-to-reveal on the ad page and never scraped
                     "contact": (ad.get("shopName") or "").strip() or None,
                     "title": (ad.get("title") or "").strip(),
-                    "priceLKR": _parse_price(ad.get("price"), purpose),
-                    "priceText": (ad.get("price") or "").strip(),
+                    "priceLKR": price_lkr,
+                    "priceText": price_text,
+                    "perches": perches,
                     "area": (ad.get("location") or "").strip(),
                     "propertyType": ptype,
                     "source": "ikman",

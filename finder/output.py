@@ -26,6 +26,7 @@ def print_results(listings, coverage, manual_links, limit=20):
         print(f"\n=== Shortlist ({min(len(listings), limit)} of {len(listings)} matches) ===\n")
         for i, lst in enumerate(listings[:limit], 1):
             beds = f" | {lst['bedrooms']} bed" if lst.get("bedrooms") else ""
+            beds += f" | {lst['perches']:g} perches" if lst.get("perches") else ""
             also = f" (also on: {', '.join(lst['alsoOn'])})" if lst.get("alsoOn") else ""
             contact = f" | seller: {lst['contact']}" if lst.get("contact") else ""
             print(f"{i:2}. {lst['title']}")

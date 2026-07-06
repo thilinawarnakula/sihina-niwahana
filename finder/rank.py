@@ -43,6 +43,10 @@ def score(lst, profile):
     want_beds = (profile.get("size") or {}).get("bedrooms")
     if want_beds and lst.get("bedrooms") and lst["bedrooms"] >= want_beds:
         s += 2
+
+    want_perches = (profile.get("size") or {}).get("perches")
+    if want_perches and lst.get("perches"):
+        s += 2 if lst["perches"] >= want_perches else -1
     return s
 
 

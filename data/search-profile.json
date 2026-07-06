@@ -1,28 +1,12 @@
 {
-  "propertyTypes": [
-    "house",
-    "apartment"
-  ],
+  "propertyTypes": ["land"],
   "purpose": "buy",
-  "areas": [
-    "Nugegoda",
-    "Colombo 5"
-  ],
-  "budgetLKR": {
-    "min": 20000000,
-    "max": 45000000
-  },
-  "size": {
-    "bedrooms": 3,
-    "bathrooms": null,
-    "perches": null,
-    "sqft": null
-  },
-  "mustHaves": [
-    "parking"
-  ],
+  "areas": ["Nugegoda", "Maharagama", "Nawinna", "Embuldeniya"],
+  "budgetLKR": { "min": 20000000, "max": 30000000 },
+  "size": { "bedrooms": null, "bathrooms": null, "perches": 8, "sqft": null },
   "furnishing": "any",
+  "mustHaves": [],
   "dealBreakers": [],
   "timeline": "",
-  "createdAt": "2026-07-06T04:53:40Z"
+  "createdAt": "2026-07-06T05:40:00Z"
 }
