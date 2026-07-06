@@ -80,6 +80,48 @@ CLAUDE.md section 7, which always wins).
 - **Mortgage / affordability calculator** — LKR loan rates, monthly payment
   next to each listing.
 
+## Migration: React + NestJS, drop Python (planned direction, ~1 week)
+
+Motivation: the maintainer works in JS/TS, not Python, and wants room to
+scale. Feasibility is high because **the search engine already exists in
+JavaScript** — `web/engine.js` is a verified 1:1 port of the Python parsers,
+dedupe and rank (identical results on the same pages). The migration moves
+code, it doesn't rewrite the hard part.
+
+**Target stack**
+
+| Today | After |
+|---|---|
+| `web/index.html` (vanilla JS) | React (Vite) — components for chat intake, form, results |
+| `webapp.py` + Netlify Functions | NestJS: `SearchModule` (one service per source, ported from engine.js), `AuthModule` (Firebase Admin guard), `MailModule` (nodemailer) |
+| `finder/*.py` + CLI | removed (or kept as reference until parity is proven) |
+| Netlify static + functions | React stays on Netlify; NestJS runs on Render/Railway/Fly (Netlify cannot host a NestJS server) |
+| `tests/test_search.py` | Jest — the assertions are language-neutral and port directly |
+
+**Search performance: what changes and what doesn't**
+
+- Language change alone: **no visible difference.** ~95% of a search is
+  network wait + deliberate 1.2–1.5s politeness delays; parsing/ranking is
+  milliseconds in any language.
+- The wins come from the backend architecture the migration enables:
+  1. **Parallel across sites, sequential within a site** — fetch
+     ikman/LPW/house.lk/LankaLand simultaneously while staying polite
+     per-host: ~60s → ~15s wall-clock.
+  2. **Shared Redis cache** — one user's fetch serves every user for
+     15 min; repeat searches become instant.
+  3. **Job queue (BullMQ)** — pre-warm popular searches, run saved-search
+     alerts off-peak.
+
+**Scaling constraint (mandatory, not optional):** the property sites'
+tolerance is per-server, not per-user. At scale, a **per-site request queue**
+(one polite fetch stream per source, shared by all users) + the shared cache
+is required — otherwise many users = hammering the sites = IP bans and a
+CLAUDE.md guardrail violation.
+
+**Suggested order:** NestJS backend with engine.js dropped in (1–2 days) →
+React frontend, porting the UI and chat script 1:1 (2–3 days) → Jest tests →
+per-site queue + Redis cache → only then delete the Python tree.
+
 ## Explicitly out of scope (per CLAUDE.md)
 
 - Scraping Facebook Marketplace (ToS violation; stays a manual link).
