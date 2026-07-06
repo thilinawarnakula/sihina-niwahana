@@ -66,6 +66,7 @@ export default function App() {
             log out
           </button>
         </span>
+        <span className="text-[11px] text-mut/70">v{__APP_VERSION__}</span>
       </header>
 
       <div className="border-b border-line bg-white px-4 pb-16 pt-9 text-center">

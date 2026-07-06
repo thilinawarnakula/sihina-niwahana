@@ -138,6 +138,7 @@ export default function Login() {
         <div className="mt-6 text-xs text-mut">
           🔒 Private search · nothing is stored · Sri Lanka only
         </div>
+        <div className="mt-1 text-[11px] text-mut/70">v{__APP_VERSION__}</div>
       </div>
     </div>
   );
