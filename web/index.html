@@ -68,15 +68,22 @@ a { color:var(--green); }
 
 <div id="login" class="card hidden">
   <h1>Sihina Niwahana</h1>
-  <p class="sub">Enter the password to continue.</p>
-  <input type="password" id="pw" placeholder="Password">
-  <button class="primary" onclick="login()">Log in</button>
+  <div id="pwlogin" class="hidden">
+    <p class="sub">Enter the password to continue.</p>
+    <input type="password" id="pw" placeholder="Password">
+    <button class="primary" onclick="login()">Log in</button>
+  </div>
+  <div id="fblogin" class="hidden">
+    <p class="sub">Sign in with your Google account to continue.</p>
+    <button class="primary" onclick="firebaseLogin()">Sign in with Google</button>
+  </div>
   <div id="loginmsg" class="status err"></div>
 </div>
 
 <div id="app" class="wrap hidden">
   <h1>Sihina Niwahana</h1>
-  <div class="sub">Find land, houses &amp; apartments in Sri Lanka. Nothing is stored — each search is fresh.</div>
+  <div class="sub">Find land, houses &amp; apartments in Sri Lanka. Nothing is stored — each search is fresh.
+    <span id="whoami"></span></div>
 
   <div class="card">
     <h2 style="margin-top:0">💬 Not sure where to start? Chat with me
@@ -156,8 +163,14 @@ document.querySelectorAll("#purpose .chip").forEach(c =>
 
 async function init() {
   const cfg = await (await fetch("/api/config")).json();
-  if (cfg.loginRequired && !cfg.authed) { $("login").classList.remove("hidden"); }
-  else { $("app").classList.remove("hidden"); }
+  if (cfg.loginMode !== "none" && !cfg.authed) {
+    $("login").classList.remove("hidden");
+    $(cfg.loginMode === "firebase" ? "fblogin" : "pwlogin").classList.remove("hidden");
+  } else {
+    $("app").classList.remove("hidden");
+    if (cfg.user) $("whoami").innerHTML =
+      ` Signed in as <b>${esc(cfg.user)}</b> — <button class="linkbtn" onclick="logout()">log out</button>`;
+  }
   if (!cfg.emailConfigured) {
     $("mailstatus").textContent =
       "Note: email isn't configured yet — set SMTP_USER and SMTP_PASS before starting the server.";
@@ -173,8 +186,46 @@ async function login() {
   else $("loginmsg").textContent = "Wrong password.";
 }
 document.addEventListener("keydown", e => {
-  if (e.key === "Enter" && !$("login").classList.contains("hidden")) login();
+  if (e.key === "Enter" && !$("login").classList.contains("hidden") &&
+      !$("pwlogin").classList.contains("hidden")) login();
 });
+
+/* ---- Firebase Google sign-in (used when web/firebase-config.js is set) ---- */
+function loadScript(src) {
+  return new Promise((ok, err) => {
+    const s = document.createElement("script");
+    s.src = src; s.onload = ok; s.onerror = () => err(new Error("load failed: " + src));
+    document.head.appendChild(s);
+  });
+}
+
+async function firebaseLogin() {
+  $("loginmsg").textContent = "";
+  try {
+    if (!window.FIREBASE_CONFIG) await loadScript("/firebase-config.js");
+    if (!window.FIREBASE_CONFIG)
+      throw new Error("web/firebase-config.js has no config yet — paste your Firebase web config there.");
+    if (!window.firebase) {
+      await loadScript("https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js");
+      await loadScript("https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js");
+      firebase.initializeApp(window.FIREBASE_CONFIG);
+    }
+    const cred = await firebase.auth().signInWithPopup(new firebase.auth.GoogleAuthProvider());
+    const idToken = await cred.user.getIdToken();
+    const r = await fetch("/api/login", {method:"POST",
+      headers:{"Content-Type":"application/json"}, body: JSON.stringify({idToken})});
+    const data = await r.json();
+    if (!r.ok) throw new Error(data.error || r.statusText);
+    location.reload();
+  } catch (e) {
+    $("loginmsg").textContent = e.message;
+  }
+}
+
+async function logout() {
+  await fetch("/api/logout", {method:"POST"});
+  location.reload();
+}
 
 const csv = id => $(id).value.split(",").map(s => s.trim()).filter(Boolean);
 

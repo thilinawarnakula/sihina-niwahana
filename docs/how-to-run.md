@@ -103,6 +103,19 @@ for you) or directly in the **form** — then hit Search. Results show summary
 tiles, the clickable shortlist, coverage, and browse-yourself links.
 By design the web UI stores **nothing** — no profiles, no search history.
 
+**Login modes** (picked automatically at startup):
+
+1. **Firebase Google sign-in** — paste your Firebase web config into
+   `web/firebase-config.js` (instructions inside the file). The page then
+   shows "Sign in with Google"; the ID token is verified server-side via
+   Firebase's REST API — no extra packages. Optionally restrict accounts:
+   `ALLOWED_EMAILS="you@gmail.com,partner@gmail.com" python3 webapp.py`.
+   Firebase setup: console.firebase.google.com → Add project →
+   Build → Authentication → Get started → enable **Google** → Project
+   settings → Your apps → Web app (</>) → copy the config object.
+2. **Password** — no Firebase config but `APP_PASSWORD` set.
+3. **Open** — neither configured; no login (fine for local use).
+
 **Email summary:** the "Send email" button emails the results (the same HTML
 report the CLI makes). Configure it with environment variables before
 starting the server — never put credentials in code:
