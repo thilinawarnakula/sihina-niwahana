@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sihina Niwahana — Sri Lanka Property Finder</title>
+<style>
+:root { --ink:#1c2b24; --mut:#5c6f66; --line:#dfe7e2; --bg:#f6f8f7;
+        --card:#fff; --green:#2f6f4f; --amber:#a8721d; --red:#b3402e; }
+* { box-sizing:border-box; margin:0; }
+body { font:15px/1.55 -apple-system,'Segoe UI',Roboto,sans-serif;
+       color:var(--ink); background:var(--bg); padding:1.5rem 1rem 4rem; }
+.wrap { max-width:880px; margin:0 auto; }
+h1 { font-size:1.4rem; } .sub { color:var(--mut); margin-bottom:1.25rem; }
+h2 { font-size:1rem; margin:1.6rem 0 .6rem; }
+.card { background:var(--card); border:1px solid var(--line);
+        border-radius:12px; padding:1.1rem 1.25rem; margin:.8rem 0; }
+label { display:block; font-size:.85rem; color:var(--mut); margin:.6rem 0 .2rem; }
+input[type=text], input[type=number], input[type=email], input[type=password] {
+  width:100%; padding:.5rem .65rem; border:1px solid var(--line);
+  border-radius:8px; font:inherit; background:var(--bg); }
+.row { display:grid; grid-template-columns:1fr 1fr; gap:.9rem; }
+.chips { display:flex; gap:.5rem; flex-wrap:wrap; }
+.chip { border:1px solid var(--line); border-radius:20px; padding:.35rem .9rem;
+        cursor:pointer; user-select:none; background:var(--bg); font-size:.9rem; }
+.chip.on { background:var(--green); color:#fff; border-color:var(--green); }
+button.primary { background:var(--green); color:#fff; border:0; font:inherit;
+  font-weight:600; padding:.65rem 1.4rem; border-radius:9px; cursor:pointer;
+  margin-top:1rem; }
+button.primary:disabled { opacity:.55; cursor:wait; }
+.status { margin:.8rem 0; color:var(--mut); }
+.status.err { color:var(--red); }
+.tiles { display:grid; grid-template-columns:repeat(auto-fit,minmax(120px,1fr));
+         gap:.6rem; margin:.8rem 0; }
+.tile { background:var(--card); border:1px solid var(--line); border-radius:10px;
+        padding:.7rem .9rem; }
+.tile b { display:block; font-size:1.2rem; } .tile span { color:var(--mut); font-size:.78rem; }
+.listing { border-bottom:1px solid var(--line); padding:.7rem 0; }
+.listing:last-child { border-bottom:0; }
+.listing a.t { font-weight:600; color:var(--ink); text-decoration:none; }
+.listing a.t:hover { text-decoration:underline; }
+.meta { color:var(--mut); font-size:.86rem; margin-top:.1rem; }
+.price { color:var(--green); font-weight:700; }
+.src { background:var(--bg); border:1px solid var(--line); border-radius:5px;
+       padding:0 .4em; font-size:.76rem; color:var(--mut); }
+.badge { background:#eaf3ee; color:var(--green); border-radius:5px;
+         padding:0 .4em; font-size:.76rem; }
+.cov li { font-size:.87rem; margin:.2rem 0; } .cov .err { color:var(--amber); }
+.emailrow { display:flex; gap:.6rem; margin-top:.5rem; }
+.emailrow input { flex:1; } .emailrow button { margin-top:0; }
+#chatlog { max-height:340px; overflow-y:auto; padding:.25rem 0; }
+.msg { max-width:82%; padding:.5rem .8rem; border-radius:12px; margin:.35rem 0;
+       font-size:.92rem; white-space:pre-line; }
+.msg.bot { background:var(--bg); border:1px solid var(--line); }
+.msg.me { background:var(--green); color:#fff; margin-left:auto; }
+.chatrow { display:flex; gap:.6rem; margin-top:.6rem; }
+.chatrow input { flex:1; } .chatrow button { margin-top:0; }
+.quick { display:flex; gap:.4rem; flex-wrap:wrap; margin:.3rem 0 .1rem; }
+.linkbtn { background:none; border:none; color:var(--green); cursor:pointer;
+           font:inherit; font-size:.86rem; text-decoration:underline; padding:0; }
+#login { max-width:380px; margin:12vh auto; }
+.hidden { display:none; }
+ul { padding-left:1.15rem; }
+a { color:var(--green); }
+</style>
+</head>
+<body>
+
+<div id="login" class="card hidden">
+  <h1>Sihina Niwahana</h1>
+  <p class="sub">Enter the password to continue.</p>
+  <input type="password" id="pw" placeholder="Password">
+  <button class="primary" onclick="login()">Log in</button>
+  <div id="loginmsg" class="status err"></div>
+</div>
+
+<div id="app" class="wrap hidden">
+  <h1>Sihina Niwahana</h1>
+  <div class="sub">Find land, houses &amp; apartments in Sri Lanka. Nothing is stored — each search is fresh.</div>
+
+  <div class="card">
+    <h2 style="margin-top:0">💬 Not sure where to start? Chat with me
+      <button class="linkbtn" id="chattoggle" onclick="toggleChat()">start chat</button></h2>
+    <div id="chatbox" class="hidden">
+      <div id="chatlog"></div>
+      <div class="quick" id="quick"></div>
+      <div class="chatrow">
+        <input type="text" id="chatin" placeholder="Type your answer…"
+               onkeydown="if(event.key==='Enter')chatSend()">
+        <button class="primary" onclick="chatSend()">Send</button>
+      </div>
+    </div>
+    <div class="sub" style="margin:0">…or fill the form below directly — both do the same thing.</div>
+  </div>
+
+  <div class="card">
+    <label>Property type (pick one or more)</label>
+    <div class="chips" id="types">
+      <span class="chip" data-v="house">House</span>
+      <span class="chip" data-v="apartment">Apartment</span>
+      <span class="chip" data-v="land">Land</span>
+    </div>
+
+    <label>Purpose</label>
+    <div class="chips" id="purpose">
+      <span class="chip on" data-v="buy">Buy</span>
+      <span class="chip" data-v="rent">Rent</span>
+    </div>
+
+    <label>Areas (comma-separated — e.g. Nugegoda, Maharagama, Colombo 5)</label>
+    <input type="text" id="areas" placeholder="Nugegoda, Maharagama">
+
+    <div class="row">
+      <div><label>Budget min (LKR)</label><input type="number" id="bmin" placeholder="20000000"></div>
+      <div><label>Budget max (LKR)</label><input type="number" id="bmax" placeholder="45000000"></div>
+    </div>
+    <div class="row">
+      <div><label>Min bedrooms (house/apartment)</label><input type="number" id="beds" placeholder="3"></div>
+      <div><label>Min perches (land)</label><input type="number" id="perches" placeholder="8"></div>
+    </div>
+    <div class="row">
+      <div><label>Must-haves (comma-separated)</label><input type="text" id="must" placeholder="parking, near main road"></div>
+      <div><label>Exclude (comma-separated)</label><input type="text" id="avoid" placeholder="ground floor"></div>
+    </div>
+
+    <button class="primary" id="go" onclick="search()">Search</button>
+    <div class="status" id="status"></div>
+  </div>
+
+  <div id="results" class="hidden">
+    <div class="tiles" id="tiles"></div>
+    <div class="card">
+      <h2 style="margin-top:0">Email this summary</h2>
+      <div class="emailrow">
+        <input type="email" id="mailto" placeholder="you@example.com">
+        <button class="primary" id="send" onclick="sendMail()">Send email</button>
+      </div>
+      <div class="status" id="mailstatus"></div>
+    </div>
+    <div class="card"><h2 style="margin-top:0">Shortlist</h2><div id="list"></div></div>
+    <div class="card"><h2 style="margin-top:0">Coverage</h2><ul class="cov" id="cov"></ul></div>
+    <div class="card" id="manualcard"><h2 style="margin-top:0">Browse yourself (not searched automatically)</h2><ul id="manual"></ul></div>
+  </div>
+</div>
+
+<script>
+const $ = id => document.getElementById(id);
+const esc = s => String(s ?? "").replace(/[&<>"']/g,
+  c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+
+document.querySelectorAll("#types .chip").forEach(c =>
+  c.onclick = () => c.classList.toggle("on"));
+document.querySelectorAll("#purpose .chip").forEach(c =>
+  c.onclick = () => { document.querySelectorAll("#purpose .chip")
+    .forEach(x => x.classList.remove("on")); c.classList.add("on"); });
+
+async function init() {
+  const cfg = await (await fetch("/api/config")).json();
+  if (cfg.loginRequired && !cfg.authed) { $("login").classList.remove("hidden"); }
+  else { $("app").classList.remove("hidden"); }
+  if (!cfg.emailConfigured) {
+    $("mailstatus").textContent =
+      "Note: email isn't configured yet — set SMTP_USER and SMTP_PASS before starting the server.";
+  }
+}
+init();
+
+async function login() {
+  const r = await fetch("/api/login", {method:"POST",
+    headers:{"Content-Type":"application/json"},
+    body: JSON.stringify({password: $("pw").value})});
+  if (r.ok) { $("login").classList.add("hidden"); $("app").classList.remove("hidden"); }
+  else $("loginmsg").textContent = "Wrong password.";
+}
+document.addEventListener("keydown", e => {
+  if (e.key === "Enter" && !$("login").classList.contains("hidden")) login();
+});
+
+const csv = id => $(id).value.split(",").map(s => s.trim()).filter(Boolean);
+
+async function search() {
+  const types = [...document.querySelectorAll("#types .chip.on")].map(c => c.dataset.v);
+  const purpose = document.querySelector("#purpose .chip.on").dataset.v;
+  const body = {
+    propertyTypes: types, purpose, areas: csv("areas"),
+    budgetLKR: {min: $("bmin").value, max: $("bmax").value},
+    size: {bedrooms: $("beds").value, perches: $("perches").value},
+    mustHaves: csv("must"), dealBreakers: csv("avoid"),
+  };
+  if (!types.length || !body.areas.length) {
+    $("status").className = "status err";
+    $("status").textContent = "Pick at least one property type and one area.";
+    return;
+  }
+  $("go").disabled = true;
+  $("status").className = "status";
+  $("status").textContent = "Searching ikman.lk, LankaPropertyWeb, house.lk, LankaLand… " +
+    "this takes a minute (requests are rate-limited to be polite to the sites).";
+  try {
+    const r = await fetch("/api/search", {method:"POST",
+      headers:{"Content-Type":"application/json"}, body: JSON.stringify(body)});
+    const data = await r.json();
+    if (!r.ok) throw new Error(data.error || r.statusText);
+    show(data);
+    $("status").textContent = "";
+  } catch (e) {
+    $("status").className = "status err";
+    $("status").textContent = "Search failed: " + e.message;
+  } finally { $("go").disabled = false; }
+}
+
+function show(d) {
+  const ls = d.listings || [];
+  const priced = ls.filter(l => l.priceLKR);
+  const med = priced.length ?
+    priced.map(l => l.priceLKR).sort((a,b)=>a-b)[Math.floor(priced.length/2)] : null;
+  const fmt = n => n == null ? "—" :
+    (n >= 1e6 ? "Rs " + (n/1e6).toFixed(n%1e6?1:0) + "M" : "Rs " + n.toLocaleString());
+  const dups = ls.reduce((s,l)=>s+((l.alsoOn||[]).length),0);
+  $("tiles").innerHTML = [
+    [ls.length, "matching listings"],
+    [priced.length ? fmt(Math.min(...priced.map(l=>l.priceLKR))) : "—", "lowest price"],
+    [fmt(med), "median price"],
+    [dups, "duplicates merged"],
+  ].map(([b,s]) => `<div class="tile"><b>${b}</b><span>${s}</span></div>`).join("");
+
+  $("list").innerHTML = ls.length ? ls.map((l,i) => `
+    <div class="listing">
+      <a class="t" href="${esc(l.url)}" target="_blank" rel="noopener">${i+1}. ${esc(l.title)}</a>
+      <div class="meta"><span class="price">${esc(l.priceText || fmt(l.priceLKR))}</span>
+        · ${esc(l.area)} · ${esc(l.propertyType)}${l.bedrooms ? " · " + l.bedrooms + " bed" : ""}${l.perches ? " · " + l.perches + " perches" : ""}${l.contact ? " · seller: " + esc(l.contact) : ""}
+        <span class="src">${esc(l.source)}</span>
+        ${(l.alsoOn||[]).length ? `<span class="badge">also on: ${esc(l.alsoOn.join(", "))}</span>` : ""}</div>
+    </div>`).join("") : "<p>No matching listings found.</p>";
+
+  $("cov").innerHTML = Object.entries(d.coverage || {}).map(([src, info]) => {
+    const ok = (info.searched||[]).length ?
+      `<li><b>${esc(src)}</b>: searched ${info.searched.length} page(s), ${info.count} listing(s)</li>` : "";
+    return ok + (info.errors||[]).map(e => `<li class="err">${esc(e)}</li>`).join("");
+  }).join("");
+
+  const man = d.manualLinks || [];
+  $("manualcard").style.display = man.length ? "" : "none";
+  $("manual").innerHTML = man.map(m =>
+    `<li><a href="${esc(m.url)}" target="_blank" rel="noopener">${esc(m.label)}</a></li>`).join("");
+
+  $("results").classList.remove("hidden");
+  $("results").scrollIntoView({behavior:"smooth"});
+}
+
+/* ---- chat-based intake: scripted Q&A that fills the form as you answer ---- */
+let chatStep = null;
+
+function toggleChat() {
+  const box = $("chatbox");
+  box.classList.toggle("hidden");
+  $("chattoggle").textContent = box.classList.contains("hidden") ? "start chat" : "hide chat";
+  if (!box.classList.contains("hidden") && chatStep === null) {
+    chatStep = "type";
+    bot("Hi! I'll help you set up your search — a few quick questions, " +
+        "one at a time. You can type \"skip\" for any optional one.\n\n" +
+        "First: are you looking for land, a house, or an apartment? (one or more)");
+    quicks(["Land", "House", "Apartment", "House and apartment"]);
+  }
+}
+
+function bot(text)  { addMsg(text, "bot"); }
+function addMsg(text, who) {
+  const d = document.createElement("div");
+  d.className = "msg " + who;
+  d.textContent = text;
+  $("chatlog").appendChild(d);
+  $("chatlog").scrollTop = $("chatlog").scrollHeight;
+}
+function quicks(opts) {
+  $("quick").innerHTML = opts.map(o =>
+    `<span class="chip" onclick="chatAnswer('${o.replace(/'/g,"")}')">${o}</span>`).join("");
+}
+function chatSend() {
+  const v = $("chatin").value.trim();
+  if (!v) return;
+  $("chatin").value = "";
+  chatAnswer(v);
+}
+
+// number like "20m", "3.5 million", "45000000", "450k"
+function parseLKR(s) {
+  const m = s.replace(/,/g, "").match(/([\d.]+)\s*(m|million|k|lakh|lakhs)?/i);
+  if (!m) return null;
+  let v = parseFloat(m[1]);
+  const u = (m[2] || "").toLowerCase();
+  if (u === "m" || u === "million") v *= 1e6;
+  else if (u === "k") v *= 1e3;
+  else if (u.startsWith("lakh")) v *= 1e5;
+  return Math.round(v);
+}
+const skipped = s => /^(skip|no|none|nope|any|-|n\/a)$/i.test(s.trim());
+
+function setChip(group, values) {
+  document.querySelectorAll(`#${group} .chip`).forEach(c =>
+    c.classList.toggle("on", values.includes(c.dataset.v)));
+}
+
+function chatAnswer(text) {
+  addMsg(text, "me");
+  $("quick").innerHTML = "";
+  const low = text.toLowerCase();
+
+  if (chatStep === "type") {
+    const types = ["land", "house", "apartment"].filter(t => low.includes(t));
+    if (!types.length) { bot("Please say land, house, or apartment (or a mix)."); return; }
+    setChip("types", types);
+    chatStep = "purpose";
+    bot("Got it: " + types.join(" + ") + ". Are you buying or renting?");
+    quicks(["Buy", "Rent"]);
+
+  } else if (chatStep === "purpose") {
+    const p = /rent/.test(low) ? "rent" : (/buy|purchase|sale/.test(low) ? "buy" : null);
+    if (!p) { bot("Buy or rent?"); return; }
+    setChip("purpose", [p]);
+    chatStep = "areas";
+    bot("Which area(s)? District, city or town — e.g. Nugegoda, Maharagama, " +
+        "Colombo 5, Kandy. Separate multiple areas with commas.");
+
+  } else if (chatStep === "areas") {
+    const areas = text.split(/,| and /i).map(s => s.trim()).filter(Boolean);
+    if (!areas.length) { bot("Name at least one area."); return; }
+    $("areas").value = areas.join(", ");
+    chatStep = "budget";
+    bot("What's your budget in LKR? Give a range like \"20m - 30m\", " +
+        "a max like \"under 45m\", or \"skip\".");
+    quicks(["Skip"]);
+
+  } else if (chatStep === "budget") {
+    if (!skipped(text)) {
+      const nums = text.replace(/,/g, "").match(/[\d.]+\s*(?:m|million|k|lakhs?)?/gi) || [];
+      if (/under|max|below|up to/.test(low) && nums.length >= 1) {
+        $("bmax").value = parseLKR(nums[0]);
+      } else if (nums.length >= 2) {
+        $("bmin").value = parseLKR(nums[0]); $("bmax").value = parseLKR(nums[1]);
+      } else if (nums.length === 1) {
+        $("bmax").value = parseLKR(nums[0]);
+      }
+    }
+    const wantLand = document.querySelector('#types .chip[data-v="land"]').classList.contains("on");
+    const wantHome = ["house","apartment"].some(t =>
+      document.querySelector(`#types .chip[data-v="${t}"]`).classList.contains("on"));
+    if (wantLand) { chatStep = "perches"; bot("Minimum land size in perches? (or \"skip\")"); quicks(["8", "10", "15", "Skip"]); }
+    else if (wantHome) { chatStep = "beds"; bot("Minimum bedrooms? (or \"skip\")"); quicks(["2", "3", "4", "Skip"]); }
+    else { chatStep = "must"; askMust(); }
+
+  } else if (chatStep === "perches") {
+    if (!skipped(text)) { const n = parseFloat(low); if (n) $("perches").value = n; }
+    const wantHome = ["house","apartment"].some(t =>
+      document.querySelector(`#types .chip[data-v="${t}"]`).classList.contains("on"));
+    if (wantHome) { chatStep = "beds"; bot("And minimum bedrooms for the house/apartment? (or \"skip\")"); quicks(["2","3","4","Skip"]); }
+    else { chatStep = "must"; askMust(); }
+
+  } else if (chatStep === "beds") {
+    if (!skipped(text)) { const n = parseInt(low); if (n) $("beds").value = n; }
+    chatStep = "must"; askMust();
+
+  } else if (chatStep === "must") {
+    if (!skipped(text)) $("must").value = text;
+    chatStep = "avoid";
+    bot("Anything to avoid — deal-breakers? (or \"skip\")");
+    quicks(["Skip"]);
+
+  } else if (chatStep === "avoid") {
+    if (!skipped(text)) $("avoid").value = text;
+    chatStep = "done";
+    bot("All set! Your preferences are filled in the form below — review or " +
+        "tweak anything, then hit Search. Want me to run it now?");
+    quicks(["Search now", "I'll review first"]);
+
+  } else if (chatStep === "done") {
+    if (/search|yes|run|go/.test(low)) { search(); bot("Searching — results will appear below…"); }
+    else bot("No problem — the form below has everything. Hit Search whenever you're ready.");
+  }
+}
+function askMust() {
+  bot("Any must-haves? e.g. parking, garden, near main road, clear deed. " +
+      "Comma-separated, or \"skip\".");
+  quicks(["Skip"]);
+}
+
+async function sendMail() {
+  const to = $("mailto").value.trim();
+  $("send").disabled = true;
+  $("mailstatus").className = "status";
+  $("mailstatus").textContent = "Sending…";
+  try {
+    const r = await fetch("/api/email", {method:"POST",
+      headers:{"Content-Type":"application/json"}, body: JSON.stringify({to})});
+    const data = await r.json();
+    if (!r.ok) throw new Error(data.error || r.statusText);
+    $("mailstatus").textContent = "Sent to " + data.sent + " ✓";
+  } catch (e) {
+    $("mailstatus").className = "status err";
+    $("mailstatus").textContent = e.message;
+  } finally { $("send").disabled = false; }
+}
+</script>
+</body>
+</html>

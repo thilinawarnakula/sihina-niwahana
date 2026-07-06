@@ -16,24 +16,11 @@ import argparse
 import json
 import sys
 
-from finder import PROFILE_PATH, PROFILES_DIR, SOURCES_PATH
+from finder import PROFILES_DIR
+from finder.core import run_search
 from finder.intake import load_profile, run_intake, save_profile, summarize
-from finder.dedupe import dedupe
-from finder.rank import rank
 from finder.output import print_results, save_results
 from finder.report import write_report
-from finder.sources import (ikman, lpw, houselk, lankaland, patpat,
-                            ceylonproperty, facebook)
-
-SOURCE_MODULES = {
-    "ikman": ikman,
-    "lpw": lpw,
-    "houselk": houselk,
-    "lankaland": lankaland,
-    "patpat": patpat,
-    "ceylonproperty": ceylonproperty,
-    "facebook": facebook,
-}
 
 
 def _parse_lkr(raw):
@@ -106,33 +93,10 @@ def cmd_search(args):
 
     print("Searching with profile:\n" + summarize(profile) + "\n")
 
-    sources = json.loads(SOURCES_PATH.read_text(encoding="utf-8"))
-    sources = sorted([s for s in sources if s.get("enabled")],
-                     key=lambda s: s.get("priority", 9))
-
-    all_listings, coverage, manual_links = [], {}, []
-    for src in sources:
-        module = SOURCE_MODULES.get(src["id"])
-        if module is None:
-            coverage[src["name"]] = {"searched": [], "count": 0,
-                                     "errors": [f"{src['id']}: enabled in config but no parser implemented"]}
-            continue
-        print(f"Searching {src['name']} ...")
-        try:
-            res = module.search(profile)
-        except Exception as e:  # a broken source must never kill the whole search
-            coverage[src["name"]] = {"searched": [], "count": 0,
-                                     "errors": [f"{src['id']}: unexpected error: {e}"]}
-            continue
-        all_listings.extend(res["listings"])
-        manual_links.extend(res.get("manual") or [])
-        coverage[src["name"]] = {"searched": res["searched"],
-                                 "count": len(res["listings"]),
-                                 "errors": res["errors"]}
-
-    unique = dedupe(all_listings)
-    ranked = rank(unique, profile)
-    print_results(ranked, coverage, manual_links, limit=args.limit)
+    payload = run_search(profile,
+                         on_progress=lambda name: print(f"Searching {name} ..."))
+    ranked, coverage = payload["listings"], payload["coverage"]
+    print_results(ranked, coverage, payload["manualLinks"], limit=args.limit)
     path = save_results(ranked, profile, coverage)
     print(f"\nFull results saved to {path}")
     if args.html:

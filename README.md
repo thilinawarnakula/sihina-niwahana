@@ -22,6 +22,7 @@ python3 propertyfinder.py search
 python3 propertyfinder.py show          # see the current profile
 python3 propertyfinder.py search --html # also open an HTML report with insights
 python3 propertyfinder.py report        # re-render the latest results as HTML
+python3 webapp.py                       # web UI at http://localhost:8765
 ```
 
 Scripted intake (no prompts):
@@ -55,9 +56,13 @@ User-Agent, cached for 15 minutes, and use only robots.txt-allowed URLs.
 ## Layout
 
 ```
-propertyfinder.py        CLI entry (intake / search / show)
+propertyfinder.py        CLI entry (intake / search / show / report)
+webapp.py                local web UI (guided chat or form -> search -> email)
+web/index.html           the single-page UI
 finder/
   intake.py              Q&A -> data/search-profile.json
+  core.py                search orchestration shared by CLI and web
+  emailer.py             email the summary (SMTP creds via env vars)
   fetch.py               polite HTTP: rate limit, UA, short disk cache
   locations.py           city -> district/province lookup for URL building
   dedupe.py              cross-site duplicate removal (by shared listing ID,

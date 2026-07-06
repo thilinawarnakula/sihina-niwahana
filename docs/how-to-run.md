@@ -90,6 +90,34 @@ source, area, property type and bedrooms, a price-distribution histogram,
 best-value picks (price per bedroom), the full clickable shortlist, and the
 coverage report.
 
+## The website (`webapp.py`)
+
+```bash
+python3 webapp.py                      # open http://localhost:8765
+APP_PASSWORD=secret python3 webapp.py  # same, but requires a password to log in
+```
+
+A small local web UI on the same search core. Set your preferences either
+through the **guided chat** (asks one question at a time and fills the form
+for you) or directly in the **form** — then hit Search. Results show summary
+tiles, the clickable shortlist, coverage, and browse-yourself links.
+By design the web UI stores **nothing** — no profiles, no search history.
+
+**Email summary:** the "Send email" button emails the results (the same HTML
+report the CLI makes). Configure it with environment variables before
+starting the server — never put credentials in code:
+
+```bash
+export SMTP_USER="you@gmail.com"
+export SMTP_PASS="your-gmail-app-password"   # Google Account -> Security ->
+                                             # 2-Step Verification -> App passwords
+python3 webapp.py
+```
+
+`SMTP_HOST`/`SMTP_PORT` default to Gmail (`smtp.gmail.com:587`); set them for
+another provider. Without `SMTP_USER`/`SMTP_PASS` the button explains what to
+set instead of failing silently.
+
 ## What you get (the outcome)
 
 - A **ranked shortlist** in the terminal: title, price (LKR, exactly as the
