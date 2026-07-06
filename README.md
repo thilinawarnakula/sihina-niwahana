@@ -7,6 +7,8 @@ ranked shortlist with direct links.
 
 Pure Python 3 standard library — nothing to install.
 
+Full usage guide: [docs/how-to-run.md](docs/how-to-run.md)
+
 ## Quick start
 
 ```bash
