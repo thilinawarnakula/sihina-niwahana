@@ -16,12 +16,34 @@ export default function App() {
   const [status, setStatus] = useState<{ text: string; error?: boolean } | null>(null);
   const [data, setData] = useState<SearchPayload | null>(null);
   const [hasBackend, setHasBackend] = useState(true);
+  // recent searches: saved in this browser only (localStorage), max 5
+  const [recent, setRecent] = useState<{ label: string; form: FormState }[]>(() => {
+    try { return JSON.parse(localStorage.getItem("recentSearches") || "[]"); }
+    catch { return []; }
+  });
 
   useEffect(() => watchUser((u) => { setUser(u); setReady(true); }), []);
   useEffect(() => { getConfig().then((c) => setHasBackend(c !== null)); }, []);
 
-  const search = async () => {
-    if (!form.types.length || !form.areas.trim()) {
+  const fmtM = (s: string) => {
+    const n = parseFloat(s);
+    return Number.isFinite(n) && n >= 1e6 ? (n / 1e6) + "M" : s;
+  };
+
+  const rememberSearch = (f: FormState) => {
+    const label = [
+      f.types.join("+"), f.purpose, f.areas,
+      f.bmax ? "≤ " + fmtM(f.bmax) : "",
+    ].filter(Boolean).join(" · ");
+    const next = [{ label, form: f },
+      ...recent.filter((r) => r.label !== label)].slice(0, 5);
+    setRecent(next);
+    localStorage.setItem("recentSearches", JSON.stringify(next));
+  };
+
+  const search = async (override?: FormState) => {
+    const f = override || form;
+    if (!f.types.length || !f.areas.trim()) {
       setStatus({ text: "Pick at least one property type and one area.", error: true });
       return;
     }
@@ -30,19 +52,27 @@ export default function App() {
     setStatus({ text: "Searching ikman.lk, LankaPropertyWeb, house.lk, LankaLand — " +
                       "sites are fetched in parallel, politely." });
     try {
-      const profile = toProfile(form);
+      const profile = toProfile(f);
+      let result: SearchPayload;
       if (hasBackend) {
-        setData(await runSearch(profile));
+        result = await runSearch(profile);
       } else {
         // static hosting (Netlify): search runs in this browser via the
         // /api/page proxy function — same engine, same politeness
-        setData(await runSearchInBrowser(profile as any, fetchPageViaProxy,
-          (msg) => setStatus({ text: msg })) as SearchPayload);
+        result = await runSearchInBrowser(profile as any, fetchPageViaProxy,
+          (msg) => setStatus({ text: msg })) as SearchPayload;
       }
+      setData(result);
+      rememberSearch(f);
       setStatus(null);
     } catch (e: any) {
       setStatus({ text: "Search failed: " + e.message, error: true });
     } finally { setBusy(false); }
+  };
+
+  const quickSearch = (saved: { label: string; form: FormState }) => {
+    setForm(saved.form);
+    search(saved.form);
   };
 
   if (!ready) return null;
@@ -80,8 +110,26 @@ export default function App() {
       </div>
 
       <main className="mx-auto -mt-10 max-w-4xl px-4 pb-20">
-        <Chat form={form} setForm={setForm} onSearch={search} />
-        <SearchForm form={form} setForm={setForm} onSearch={search}
+        {recent.length > 0 && (
+          <div className="mb-4 rounded-card border border-line bg-white p-4 shadow-card">
+            <div className="mb-2 text-xs font-semibold uppercase tracking-wide text-mut">
+              ⚡ Quick search — your recent searches
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {recent.map((r) => (
+                <button key={r.label} onClick={() => quickSearch(r)} disabled={busy}
+                  className="rounded-full border border-line bg-page px-3.5 py-1.5
+                             text-sm font-medium text-body transition
+                             hover:border-brand hover:bg-brand-tint hover:text-brand
+                             disabled:opacity-50">
+                  {r.label}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+        <Chat form={form} setForm={setForm} onSearch={() => search()} />
+        <SearchForm form={form} setForm={setForm} onSearch={() => search()}
                     busy={busy} status={status} />
         {busy && <Skeletons />}
         {data && <Results data={data} />}
